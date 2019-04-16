@@ -1,0 +1,141 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageAccountName": {
+            "type": "string"
+        },
+        "storageSASToken": {
+            "type": "string"
+        },
+        "expirationDate": {
+            "type": "string",
+            "defaultValue": "[utcNow('yyyy-MM-dd')]"
+        }
+    },
+    "variables": {
+        "onpremise": [
+            {
+                "name": "2onpremise",
+                "network": {
+                    "address-prefix": [
+                        "10.0.0.0/24"
+                    ],
+                    "subnets": [
+                        {
+                            "name": "onpremise-transv",
+                            "addressPrefix": "10.0.0.0/26"
+                        },
+                        {
+                            "name": "onpremise-jump",
+                            "addressPrefix": "10.0.0.224/28"
+                        }
+                    ]
+                }
+            }
+        ],
+        "hub": [
+            {
+                "name": "2hub",
+                "logAnalytics": {
+                    "name": "demo-hub-spoke"
+                },
+                "network": {
+                    "firewallInternalIP": "10.0.1.132",
+                    "address-prefix": [
+                        "10.0.1.0/24"
+                    ],
+                    "subnets": [
+                        {
+                            "name": "hub-transv",
+                            "addressPrefix": "10.0.1.0/26"
+                        },
+                        {
+                            "name": "AzureFirewallSubnet",
+                            "addressPrefix": "10.0.1.128/25"
+                        }
+                    ]
+                }
+            }
+        ],
+        "spoke": [
+            {
+                "name": "2spoke",
+                "network": {
+                    "address-prefix": [
+                        "10.0.2.0/24",
+                        "172.0.0.0/24"
+                    ],
+                    "subnets": [
+                        {
+                            "name": "spoke-entries",
+                            "addressPrefix": "10.0.2.0/25"
+                        },
+                        {
+                            "name": "spoke-compute",
+                            "addressPrefix": "172.0.0.0/24"
+                        }
+                    ]
+                }
+            }
+        ],
+        "data": "[union(variables('onpremise'), variables('hub'), variables('spoke'))]",
+        "subnetsWithoutUdr": [
+            "AzureFirewallSubnet",
+            "onpremise-transv",
+            "onpremise-jump"
+        ]
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[concat('dpy-rg-', variables('data')[copyIndex('rgLoop')].name)]",
+            "location": "[deployment().Location]",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/rg.json', parameters('storageSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "rgName": {
+                        "value": "[concat(variables('data')[copyIndex('rgLoop')].name, '-rg')]"
+                    },
+                    "expirationDate": {
+                        "value": "[parameters('expirationDate')]"
+                    },
+                    "useCase": {
+                        "value": "hubspokev2"
+                    }
+                }
+            },
+            "copy": {
+                "name": "rgLoop",
+                "count": "[length(variables('data'))]"
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[concat('dpy-hub-loa-', variables('hub')[0].logAnalytics.name)]",
+            "resourceGroup": "[concat(variables('hub')[0].name, '-rg')]",
+            "dependsOn": [
+                "rgLoop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/loa.json', parameters('storageSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "loaName": {
+                        "value": "[concat(variables('hub')[0].logAnalytics.name, '-loa')]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}

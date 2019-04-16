@@ -1,0 +1,40 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "loaName": {
+            "type": "string"
+        },
+        "retention": {
+            "type": "int",
+            "defaultValue": 30,
+            "minValue": 7,
+            "maxValue": 730
+        },
+        "sku": {
+            "type": "string",
+            "allowedValues": [
+                "Free",
+                "PerNode",
+                "PerGB2018"
+            ],
+            "defaultValue": "PerGB2018"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "name": "[parameters('loaName')]",
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "apiVersion": "2015-11-01-preview",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "sku": {
+                    "name": "[parameters('sku')]"
+                },
+                "retentionInDays": "[parameters('retention')]"
+            }
+        }
+    ],
+    "outputs": {}
+}

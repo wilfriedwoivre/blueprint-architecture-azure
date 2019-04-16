@@ -1,0 +1,79 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "[HubSpoke]Build",
+            "type": "shell",
+            "options": {
+                "shell": {
+                    "executable": "powershell.exe",
+                    "args": [
+                        "-NoProfile",
+                        "-ExecutionPolicy",
+                        "ByPass",
+                        "-Command"
+                    ]
+                }
+            },
+            "command": "",
+            "args": [
+                {
+                    "value": ".\\HubSpoke\\build.ps1 -storageName ${config:storageAccount.name} -containerName ${config:storageAccount.containerName} -resourceGroupName ${config:storageAccount.resourceGroupName}",
+                    "quoting": "weak"
+                }
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "[HubSpoke]Deploy",
+            "type": "shell",
+            "dependsOn": [
+                "[HubSpoke]Build"
+            ],
+            "options": {
+                "shell": {
+                    "executable": "powershell.exe",
+                    "args": [
+                        "-NoProfile",
+                        "-ExecutionPolicy",
+                        "ByPass",
+                        "-Command"
+                    ]
+                }
+            },
+            "command": "",
+            "args": [
+                {
+                    "value": ".\\HubSpoke\\deploy.ps1 -storageName ${config:storageAccount.name} -resourceGroupName ${config:storageAccount.resourceGroupName}",
+                    "quoting": "weak"
+                }
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "[HubSpoke]Remove",
+            "type": "shell",
+            "options": {
+                "shell": {
+                    "executable": "powershell.exe",
+                    "args": [
+                        "-NoProfile",
+                        "-ExecutionPolicy",
+                        "ByPass",
+                        "-Command"
+                    ]
+                }
+            },
+            "command": "",
+            "args": [
+                {
+                    "value": ".\\HubSpoke\\remove.ps1",
+                    "quoting": "weak"
+                }
+            ],
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,0 +1,40 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "rgName": {
+            "type": "string"
+        },
+        "expirationDate": {
+            "type": "string"
+        },
+        "useCase": {
+            "type": "string"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "name": "[parameters('rgName')]",
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2018-05-01",
+            "location": "[deployment().location]",
+            "tags": {
+                "UseCase": "[parameters('useCase')]",
+                "AutoDelete": "true",
+                "ExpirationDate": "[parameters('expirationDate')]"
+            },
+            "properties": {}
+        }
+    ],
+    "outputs": {
+        "id": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Resources/resourceGroups', parameters('rgName'))]"
+        },
+        "name": {
+            "type": "string",
+            "value": "[parameters('rgName')]"
+        }
+    }
+}

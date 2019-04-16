@@ -1,0 +1,39 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "virtualNetworkName": {
+            "type": "string"
+        },
+        "subnetName": {
+            "type": "string"
+        },
+        "routes": {
+            "type": "array",
+            "defaultValue": []
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "name": "[concat('udr-', parameters('virtualNetworkName'), '-', parameters('subnetName'))]",
+            "type": "Microsoft.Network/routeTables",
+            "apiVersion": "2018-08-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "routes": "[parameters('routes')]",
+                "disableBgpRoutePropagation": true
+            }
+        }
+    ],
+    "outputs": {
+        "id": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Network/routeTables', parameters('subnetName'))]"
+        },
+        "name": {
+            "type": "string",
+            "value": "[parameters('subnetName')]"
+        }
+    }
+}
