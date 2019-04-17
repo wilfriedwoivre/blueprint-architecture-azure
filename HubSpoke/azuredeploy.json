@@ -16,7 +16,7 @@
     "variables": {
         "onpremise": [
             {
-                "name": "2onpremise",
+                "name": "onpremise",
                 "network": {
                     "address-prefix": [
                         "10.0.0.0/24"
@@ -36,7 +36,7 @@
         ],
         "hub": [
             {
-                "name": "2hub",
+                "name": "hub",
                 "logAnalytics": {
                     "name": "demo-hub-spoke"
                 },
@@ -58,9 +58,9 @@
                 }
             }
         ],
-        "spoke": [
+        "spokes": [
             {
-                "name": "2spoke",
+                "name": "spoke",
                 "network": {
                     "address-prefix": [
                         "10.0.2.0/24",
@@ -79,7 +79,7 @@
                 }
             }
         ],
-        "data": "[union(variables('onpremise'), variables('hub'), variables('spoke'))]",
+        "data": "[union(variables('onpremise'), variables('hub'), variables('spokes'))]",
         "subnetsWithoutUdr": [
             "AzureFirewallSubnet",
             "onpremise-transv",
@@ -135,7 +135,130 @@
                     }
                 }
             }
-        }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[concat('dpy-onprem-udr-', variables('onpremise')[0].network.subnets[copyIndex('udr-onpremise-loop')].name)]",
+            "resourceGroup": "[concat(variables('onpremise')[0].name, '-rg')]",
+            "condition": "[not(contains(variables('subnetsWithoutUdr'), variables('onpremise')[0].network.subnets[copyIndex('udr-onpremise-loop')].name))]",
+            "dependsOn": [
+                "rgLoop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/udr.json', parameters('storageSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "virtualNetworkName": {
+                        "value": "[concat(variables('onpremise')[0].name, '-vnet')]"
+                    },
+                    "subnetName": {
+                        "value": "[variables('onpremise')[0].network.subnets[copyIndex('udr-onpremise-loop')].name]"
+                    },
+                    "routes": {
+                        "value": [
+                            {
+                                "name": "Default",
+                                "properties": {
+                                    "addressPrefix": "0.0.0.0/0",
+                                    "nextHopType": "VirtualAppliance",
+                                    "nextHopIpAddress": "[variables('hub')[0].network.firewallInternalIP]"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "copy": {
+                "name": "udr-onpremise-loop",
+                "count": "[length(variables('onpremise')[0].network.subnets)]"
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[concat('dpy-hub-udr-', variables('hub')[0].network.subnets[copyIndex('udr-hub-loop')].name)]",
+            "resourceGroup": "[concat(variables('hub')[0].name, '-rg')]",
+            "condition": "[not(contains(variables('subnetsWithoutUdr'), variables('hub')[0].network.subnets[copyIndex('udr-hub-loop')].name))]",
+            "dependsOn": [
+                "rgLoop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/udr.json', parameters('storageSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "virtualNetworkName": {
+                        "value": "[concat(variables('hub')[0].name, '-vnet')]"
+                    },
+                    "subnetName": {
+                        "value": "[variables('hub')[0].network.subnets[copyIndex('udr-hub-loop')].name]"
+                    },
+                    "routes": {
+                        "value": [
+                            {
+                                "name": "Default",
+                                "properties": {
+                                    "addressPrefix": "0.0.0.0/0",
+                                    "nextHopType": "VirtualAppliance",
+                                    "nextHopIpAddress": "[variables('hub')[0].network.firewallInternalIP]"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "copy": {
+                "name": "udr-hub-loop",
+                "count": "[length(variables('hub')[0].network.subnets)]"
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[concat('dpy-onprem-udr-', variables('spokes')[0].network.subnets[copyIndex('udr-spoke-loop')].name)]",
+            "resourceGroup": "[concat(variables('spokes')[0].name, '-rg')]",
+            "condition": "[not(contains(variables('subnetsWithoutUdr'), variables('spokes')[0].network.subnets[copyIndex('udr-spoke-loop')].name))]",
+            "dependsOn": [
+                "rgLoop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/udr.json', parameters('storageSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "virtualNetworkName": {
+                        "value": "[concat(variables('spokes')[0].name, '-vnet')]"
+                    },
+                    "subnetName": {
+                        "value": "[variables('spokes')[0].network.subnets[copyIndex('udr-spoke-loop')].name]"
+                    },
+                    "routes": {
+                        "value": [
+                            {
+                                "name": "Default",
+                                "properties": {
+                                    "addressPrefix": "0.0.0.0/0",
+                                    "nextHopType": "VirtualAppliance",
+                                    "nextHopIpAddress": "[variables('hub')[0].network.firewallInternalIP]"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "copy": {
+                "name": "udr-spoke-loop",
+                "count": "[length(variables('spokes')[0].network.subnets)]"
+            }
+        },
     ],
     "outputs": {}
 }
