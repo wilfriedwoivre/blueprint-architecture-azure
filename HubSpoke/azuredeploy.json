@@ -23,11 +23,11 @@
                     ],
                     "subnets": [
                         {
-                            "name": "onpremise-transv",
+                            "name": "transv",
                             "addressPrefix": "10.0.0.0/26"
                         },
                         {
-                            "name": "onpremise-jump",
+                            "name": "jump",
                             "addressPrefix": "10.0.0.224/28"
                         }
                     ]
@@ -47,7 +47,7 @@
                     ],
                     "subnets": [
                         {
-                            "name": "hub-transv",
+                            "name": "transv",
                             "addressPrefix": "10.0.1.0/26"
                         },
                         {
@@ -68,11 +68,11 @@
                     ],
                     "subnets": [
                         {
-                            "name": "spoke-entries",
+                            "name": "entries",
                             "addressPrefix": "10.0.2.0/25"
                         },
                         {
-                            "name": "spoke-compute",
+                            "name": "compute",
                             "addressPrefix": "172.0.0.0/24"
                         }
                     ]
@@ -80,12 +80,71 @@
             }
         ],
         "data": "[union(variables('onpremise'), variables('hub'), variables('spokes'))]",
-        "subnetsWithoutUdr": [
+        "subnetsWithoutRouteTable": [
             "AzureFirewallSubnet",
             "onpremise-transv",
             "onpremise-jump"
         ]
     },
+    "functions": [
+        {
+            "namespace": "naming",
+            "members": {
+                "resourceGroups": {
+                    "parameters": [
+                        {
+                            "name": "baseName",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[concat(parameters('baseName'), '-rg')]"
+                    }
+                },
+                "logAnalytics": {
+                    "parameters": [
+                        {
+                            "name": "baseName",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[concat(parameters('baseName'), '-loa')]"
+                    }
+                },
+                "routeTables": {
+                    "parameters": [
+                        {
+                            "name": "virtualNetworkName",
+                            "type": "string"
+                        },
+                        {
+                            "name": "subnetName",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[concat(parameters('virtualNetworkName'), '-', parameters('subnetName'), '-rot')]"
+                    }
+                },
+                "virtualNetworks": {
+                    "parameters": [
+                        {
+                            "name": "baseName",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[concat(parameters('baseName'), '-vnet')]"
+                    }
+                }
+            }
+        }
+    ],
     "resources": [
         {
             "type": "Microsoft.Resources/deployments",
@@ -100,7 +159,7 @@
                 },
                 "parameters": {
                     "rgName": {
-                        "value": "[concat(variables('data')[copyIndex('rgLoop')].name, '-rg')]"
+                        "value": "[naming.resourceGroups(variables('data')[copyIndex('rgLoop')].name)]"
                     },
                     "expirationDate": {
                         "value": "[parameters('expirationDate')]"
@@ -119,7 +178,7 @@
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2018-05-01",
             "name": "[concat('dpy-hub-loa-', variables('hub')[0].logAnalytics.name)]",
-            "resourceGroup": "[concat(variables('hub')[0].name, '-rg')]",
+            "resourceGroup": "[naming.resourceGroups(variables('hub')[0].name)]",
             "dependsOn": [
                 "rgLoop"
             ],
@@ -131,7 +190,7 @@
                 },
                 "parameters": {
                     "loaName": {
-                        "value": "[concat(variables('hub')[0].logAnalytics.name, '-loa')]"
+                        "value": "[naming.logAnalytics(variables('hub')[0].logAnalytics.name)]"
                     }
                 }
             }
@@ -139,24 +198,21 @@
         {
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2018-05-01",
-            "name": "[concat('dpy-onprem-udr-', variables('onpremise')[0].network.subnets[copyIndex('udr-onpremise-loop')].name)]",
-            "resourceGroup": "[concat(variables('onpremise')[0].name, '-rg')]",
-            "condition": "[not(contains(variables('subnetsWithoutUdr'), variables('onpremise')[0].network.subnets[copyIndex('udr-onpremise-loop')].name))]",
+            "name": "[concat('dpy-onprem-rot-', variables('onpremise')[0].network.subnets[copyIndex('rot-onpremise-loop')].name)]",
+            "resourceGroup": "[naming.resourceGroups(variables('onpremise')[0].name)]",
+            "condition": "[not(contains(variables('subnetsWithoutRouteTable'), variables('onpremise')[0].network.subnets[copyIndex('rot-onpremise-loop')].name))]",
             "dependsOn": [
                 "rgLoop"
             ],
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
-                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/udr.json', parameters('storageSASToken'))]",
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/rot.json', parameters('storageSASToken'))]",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
-                    "virtualNetworkName": {
-                        "value": "[concat(variables('onpremise')[0].name, '-vnet')]"
-                    },
-                    "subnetName": {
-                        "value": "[variables('onpremise')[0].network.subnets[copyIndex('udr-onpremise-loop')].name]"
+                    "routeTableName": {
+                        "value": "[naming.routeTables(variables('onpremise')[0].name, variables('onpremise')[0].network.subnets[copyIndex('rot-onpremise-loop')].name)]"
                     },
                     "routes": {
                         "value": [
@@ -173,31 +229,28 @@
                 }
             },
             "copy": {
-                "name": "udr-onpremise-loop",
+                "name": "rot-onpremise-loop",
                 "count": "[length(variables('onpremise')[0].network.subnets)]"
             }
         },
         {
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2018-05-01",
-            "name": "[concat('dpy-hub-udr-', variables('hub')[0].network.subnets[copyIndex('udr-hub-loop')].name)]",
-            "resourceGroup": "[concat(variables('hub')[0].name, '-rg')]",
-            "condition": "[not(contains(variables('subnetsWithoutUdr'), variables('hub')[0].network.subnets[copyIndex('udr-hub-loop')].name))]",
+            "name": "[concat('dpy-hub-rot-', variables('hub')[0].network.subnets[copyIndex('rot-hub-loop')].name)]",
+            "resourceGroup": "[naming.resourceGroups(variables('hub')[0].name)]",
+            "condition": "[not(contains(variables('subnetsWithoutRouteTable'), variables('hub')[0].network.subnets[copyIndex('rot-hub-loop')].name))]",
             "dependsOn": [
                 "rgLoop"
             ],
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
-                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/udr.json', parameters('storageSASToken'))]",
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/rot.json', parameters('storageSASToken'))]",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
-                    "virtualNetworkName": {
-                        "value": "[concat(variables('hub')[0].name, '-vnet')]"
-                    },
-                    "subnetName": {
-                        "value": "[variables('hub')[0].network.subnets[copyIndex('udr-hub-loop')].name]"
+                    "routeTableName": {
+                        "value": "[naming.routeTables(variables('hub')[0].name, variables('hub')[0].network.subnets[copyIndex('rot-hub-loop')].name)]"
                     },
                     "routes": {
                         "value": [
@@ -214,31 +267,28 @@
                 }
             },
             "copy": {
-                "name": "udr-hub-loop",
+                "name": "rot-hub-loop",
                 "count": "[length(variables('hub')[0].network.subnets)]"
             }
         },
         {
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2018-05-01",
-            "name": "[concat('dpy-onprem-udr-', variables('spokes')[0].network.subnets[copyIndex('udr-spoke-loop')].name)]",
-            "resourceGroup": "[concat(variables('spokes')[0].name, '-rg')]",
-            "condition": "[not(contains(variables('subnetsWithoutUdr'), variables('spokes')[0].network.subnets[copyIndex('udr-spoke-loop')].name))]",
+            "name": "[concat('dpy-onprem-rot-', variables('spokes')[0].network.subnets[copyIndex('rot-spoke-loop')].name)]",
+            "resourceGroup": "[naming.resourceGroups(variables('spokes')[0].name)]",
+            "condition": "[not(contains(variables('subnetsWithoutRouteTable'), variables('spokes')[0].network.subnets[copyIndex('rot-spoke-loop')].name))]",
             "dependsOn": [
                 "rgLoop"
             ],
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
-                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/udr.json', parameters('storageSASToken'))]",
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/rot.json', parameters('storageSASToken'))]",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
-                    "virtualNetworkName": {
-                        "value": "[concat(variables('spokes')[0].name, '-vnet')]"
-                    },
-                    "subnetName": {
-                        "value": "[variables('spokes')[0].network.subnets[copyIndex('udr-spoke-loop')].name]"
+                    "routeTableName": {
+                        "value": "[naming.routeTables(variables('spokes')[0].name, variables('spokes')[0].network.subnets[copyIndex('rot-spoke-loop')].name)]"
                     },
                     "routes": {
                         "value": [
@@ -255,10 +305,10 @@
                 }
             },
             "copy": {
-                "name": "udr-spoke-loop",
+                "name": "rot-spoke-loop",
                 "count": "[length(variables('spokes')[0].network.subnets)]"
             }
-        },
+        }
     ],
     "outputs": {}
 }
