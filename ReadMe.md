@@ -13,3 +13,5 @@ Location **/.vscode/settings.json**
 ```
 
 /!\ Container name is actually hardcoded in templates
+
+Hub & Spoke : [Todo.md](./HubSpoke/Todo.md)
