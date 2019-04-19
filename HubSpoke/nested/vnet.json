@@ -1,0 +1,90 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "virtualNetworkName": {
+            "type": "string"
+        },
+        "addressPrefix": {
+            "type": "array"
+        },
+        "subnets": {
+            "type": "array",
+            "defaultValue": []
+        },
+        "subnetsWithoutRouteTable": {
+            "type": "array",
+            "defaultValue": []
+        }
+    },
+    "variables": {
+        "copy": [
+            {
+                "name": "routeTables",
+                "count": "[length(parameters('subnets'))]",
+                "input": {
+                    "id": "[resourceId('Microsoft.Network/routeTables',naming.routeTables(parameters('virtualNetworkName'), parameters('subnets')[copyIndex('routeTables')].name))]"
+                }
+            }
+        ]
+    },
+    "functions": [
+        {
+            "namespace": "naming",
+            "members": {
+                "routeTables": {
+                    "parameters": [
+                        {
+                            "name": "virtualNetworkName",
+                            "type": "string"
+                        },
+                        {
+                            "name": "subnetName",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[concat(parameters('virtualNetworkName'), '-', parameters('subnetName'), '-rot')]"
+                    }
+                }
+            }
+        }
+    ],
+    "resources": [
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2018-08-01",
+            "name": "[parameters('virtualNetworkName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": "[parameters('addressPrefix')]"
+                },
+                "copy": [
+                    {
+                        "name": "subnets",
+                        "count": "[length(parameters('subnets'))]",
+                        "input": {
+                            "name": "[parameters('subnets')[copyIndex('subnets')].name]",
+                            "properties": {
+                                "addressPrefix": "[parameters('subnets')[copyIndex('subnets')].addressPrefix]",
+                                "routeTable": "[if(contains(parameters('subnetsWithoutRouteTable'), parameters('subnets')[copyIndex('subnets')].name), json('null'), variables('routeTables')[copyIndex('subnets')])]"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "outputs": {
+        "id": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
+        },
+        "name": {
+            "type": "string",
+            "value": "[parameters('virtualNetworkName')]"
+        }
+    }
+}

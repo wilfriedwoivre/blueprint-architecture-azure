@@ -12,7 +12,7 @@
 [X] Log Analytics workspace
 [ ] Log Analytics solutions
 [X] Route Tables
-[ ] Virtual Network
+[X] Virtual Network
 [ ] Virtual Network Peering
 [ ] Public IP
 [ ] Azure Firewall

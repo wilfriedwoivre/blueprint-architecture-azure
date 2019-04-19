@@ -18,12 +18,12 @@
             {
                 "name": "onpremise",
                 "network": {
-                    "address-prefix": [
+                    "addressPrefix": [
                         "10.0.0.0/24"
                     ],
                     "subnets": [
                         {
-                            "name": "transv",
+                            "name": "local",
                             "addressPrefix": "10.0.0.0/26"
                         },
                         {
@@ -42,7 +42,7 @@
                 },
                 "network": {
                     "firewallInternalIP": "10.0.1.132",
-                    "address-prefix": [
+                    "addressPrefix": [
                         "10.0.1.0/24"
                     ],
                     "subnets": [
@@ -62,7 +62,7 @@
             {
                 "name": "spoke",
                 "network": {
-                    "address-prefix": [
+                    "addressPrefix": [
                         "10.0.2.0/24",
                         "172.0.0.0/24"
                     ],
@@ -82,8 +82,8 @@
         "data": "[union(variables('onpremise'), variables('hub'), variables('spokes'))]",
         "subnetsWithoutRouteTable": [
             "AzureFirewallSubnet",
-            "onpremise-transv",
-            "onpremise-jump"
+            "local",
+            "jump"
         ]
     },
     "functions": [
@@ -212,7 +212,7 @@
                 },
                 "parameters": {
                     "routeTableName": {
-                        "value": "[naming.routeTables(variables('onpremise')[0].name, variables('onpremise')[0].network.subnets[copyIndex('rot-onpremise-loop')].name)]"
+                        "value": "[naming.routeTables(naming.virtualNetworks(variables('onpremise')[0].name), variables('onpremise')[0].network.subnets[copyIndex('rot-onpremise-loop')].name)]"
                     },
                     "routes": {
                         "value": [
@@ -250,7 +250,7 @@
                 },
                 "parameters": {
                     "routeTableName": {
-                        "value": "[naming.routeTables(variables('hub')[0].name, variables('hub')[0].network.subnets[copyIndex('rot-hub-loop')].name)]"
+                        "value": "[naming.routeTables(naming.virtualNetworks(variables('hub')[0].name), variables('hub')[0].network.subnets[copyIndex('rot-hub-loop')].name)]"
                     },
                     "routes": {
                         "value": [
@@ -288,7 +288,7 @@
                 },
                 "parameters": {
                     "routeTableName": {
-                        "value": "[naming.routeTables(variables('spokes')[0].name, variables('spokes')[0].network.subnets[copyIndex('rot-spoke-loop')].name)]"
+                        "value": "[naming.routeTables(naming.virtualNetworks(variables('spokes')[0].name), variables('spokes')[0].network.subnets[copyIndex('rot-spoke-loop')].name)]"
                     },
                     "routes": {
                         "value": [
@@ -307,6 +307,42 @@
             "copy": {
                 "name": "rot-spoke-loop",
                 "count": "[length(variables('spokes')[0].network.subnets)]"
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[concat('dpy-', variables('data')[copyIndex('vnet-loop')].name, '-vnet-', naming.virtualNetworks(variables('data')[copyIndex('vnet-loop')].name))]",
+            "resourceGroup": "[naming.resourceGroups(variables('data')[copyIndex('vnet-loop')].name)]",
+            "dependsOn": [
+                "rot-onpremise-loop",
+                "rot-hub-loop",
+                "rot-spoke-loop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/vnet.json', parameters('storageSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "virtualNetworkName": {
+                        "value": "[naming.virtualNetworks(variables('data')[copyIndex('vnet-loop')].name)]"
+                    },
+                    "addressPrefix": {
+                        "value": "[variables('data')[copyIndex('vnet-loop')].network.addressPrefix]"
+                    },
+                    "subnets": {
+                        "value": "[variables('data')[copyIndex('vnet-loop')].network.subnets]"
+                    },
+                    "subnetsWithoutRouteTable": {
+                        "value": "[variables('subnetsWithoutRouteTable')]"
+                    }
+                }
+            },
+            "copy": {
+                "name": "vnet-loop",
+                "count": "[length(variables('data'))]"
             }
         }
     ],
