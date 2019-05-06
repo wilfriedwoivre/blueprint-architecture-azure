@@ -14,7 +14,7 @@
 - [X] Route Tables
 - [X] Virtual Network
 - [ ] Virtual Network Peering
-- [ ] Public IP
+- [X] Public IP
 - [X] Azure Firewall
 - [ ] Azure Firewall Rules
 - [ ] Storage Account
