@@ -15,7 +15,7 @@
 - [X] Virtual Network
 - [ ] Virtual Network Peering
 - [ ] Public IP
-- [ ] Azure Firewall
+- [X] Azure Firewall
 - [ ] Azure Firewall Rules
 - [ ] Storage Account
 - [ ] KeyVault

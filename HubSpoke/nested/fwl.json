@@ -1,0 +1,200 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageAccountName": {
+            "type": "string",
+            "metadata": {
+                "description": "Storage Name for nested template "
+            }
+        },
+        "storageSASToken": {
+            "type": "string",
+            "metadata": {
+                "description": "Storage SAS Token"
+            }
+        },
+        "fwlName": {
+            "type": "string",
+            "metadata": {
+                "description": "Firewall Name"
+            }
+        },
+        "virtualNetworkResourceGroupName": {
+            "type": "string",
+            "metadata": {
+                "description": "Virtual Network Resource Group Name"
+            },
+            "defaultValue": "[resourceGroup().name]"
+        },
+        "virtualNetworkName": {
+            "type": "string",
+            "metadata": {
+                "description": "Virtual Network Name"
+            }
+        },
+        "subnetName": {
+            "type": "string",
+            "metadata": {
+                "description": "subnet name"
+            },
+            "defaultValue": "AzureFirewallSubnet"
+        },
+        "applicationRuleCollections": {
+            "type": "array",
+            "metadata": {
+                "description": "Application Rule Collection. JSON ARM format https://docs.microsoft.com/en-us/azure/templates/microsoft.network/2018-08-01/azurefirewalls#AzureFirewallApplicationRuleCollection"
+            },
+            "defaultValue": []
+        },
+        "natRuleCollections": {
+            "type": "array",
+            "metadata": {
+                "description": "NAT Rule Collection. JSON ARM format https://docs.microsoft.com/en-us/azure/templates/microsoft.network/2018-08-01/azurefirewalls#AzureFirewallNatRuleCollection"
+            },
+            "defaultValue": []
+        },
+        "networkRuleCollections": {
+            "type": "array",
+            "metadata": {
+                "description": "Network Rule Collection. JSON ARM format https://docs.microsoft.com/en-us/azure/templates/microsoft.network/2018-08-01/azurefirewalls#AzureFirewallNetworkRuleCollection"
+            },
+            "defaultValue": []
+        },
+        "workspaceId": {
+            "type": "string",
+            "metadata": {
+                "description": "Log Analytics workspace Id"
+            }
+        }
+    },
+    "functions": [
+        {
+            "namespace": "naming",
+            "members": {
+                "publicIps": {
+                    "parameters": [
+                        {
+                            "name": "baseName",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[concat(parameters('baseName'), '-ip')]"
+                    }
+                },
+                "diagnostics": {
+                    "parameters": [
+                        {
+                            "name": "baseName",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[concat(parameters('baseName'), '-diag')]"
+                    }
+                }
+            }
+        }
+    ],
+    "variables": {
+        "subnetReferenceId": "[resourceId(parameters('virtualNetworkResourceGroupName'),'Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('subnetName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "dpy-fwl-publicIp",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/pip.json', parameters('storageSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "ipName": {
+                        "value": "[naming.publicIps(parameters('fwlName'))]"
+                    },
+                    "sku": {
+                        "value": "Standard"
+                    },
+                    "allocationMethod": {
+                        "value": "Static"
+                    },
+                    "addressVersion": {
+                        "value": "IPv4"
+                    }
+                }
+            }
+        },
+        {
+            "name": "[parameters('fwlName')]",
+            "type": "Microsoft.Network/azurefirewalls",
+            "apiVersion": "2018-08-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "dpy-fwl-publicIp"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "[concat('ipconf-', reference('dpy-fwl-publicIp').outputs.name.value)]",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('subnetReferenceId')]"
+                            },
+                            "publicIPAddress": {
+                                "id": "[reference('dpy-fwl-publicIp').outputs.id.value]"
+                            }
+                        }
+                    }
+                ],
+                "applicationRuleCollections": "[parameters('applicationRuleCollections')]",
+                "natRuleCollections": "[parameters('natRuleCollections')]",
+                "networkRuleCollections": "[parameters('networkRuleCollections')]"
+            },
+            "resources": [
+                {
+                    "type": "providers/diagnosticSettings",
+                    "name": "[concat('Microsoft.Insights/', naming.diagnostics(parameters('fwlName')))]",
+                    "apiVersion": "2017-05-01-preview",
+                    "condition": "[not(empty(parameters('workspaceId')))]",
+                    "dependsOn": [
+                        "[parameters('fwlName')]"
+                    ],
+                    "properties": {
+                        "workspaceId": "[parameters('workspaceId')]",
+                        "logs": [
+                            {
+                                "category": "AzureFirewallApplicationRule",
+                                "enabled": true
+                            },
+                            {
+                                "category": "AzureFirewallNetworkRule",
+                                "enabled": true
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "category": "AllMetrics",
+                                "enabled": true
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "outputs": {
+        "id": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Network/azurefirewalls', parameters('fwlName'))]"
+        },
+        "name": {
+            "type": "string",
+            "value": "[parameters('fwlName')]"
+        }
+    }
+}

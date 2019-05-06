@@ -1,0 +1,75 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "ipName": {
+            "type": "string"
+        },
+        "sku": {
+            "type": "string",
+            "allowedValues": [
+                "Basic",
+                "Standard"
+            ],
+            "defaultValue": "Basic"
+        },
+        "allocationMethod": {
+            "type": "string",
+            "allowedValues": [
+                "Static",
+                "Dynamic"
+            ],
+            "defaultValue": "Dynamic"
+        },
+        "addressVersion": {
+            "type": "string",
+            "allowedValues": [
+                "IPv4",
+                "IPv6"
+            ],
+            "defaultValue": "IPv4"
+        },
+        "idleTimeoutInMinutes": {
+            "type": "int",
+            "minValue": 4,
+            "maxValue": 30,
+            "defaultValue": 4
+        },
+        "domainNameLabel": {
+            "type": "string",
+            "defaultValue": ""
+        }
+    },
+    "variables": {
+        "dnsSettingsValue": {
+            "domainNameLabel": "[parameters('domainNameLabel')]"
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2018-08-01",
+            "name": "[parameters('ipName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[parameters('sku')]"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "[parameters('allocationMethod')]",
+                "publicIPAddressVersion": "[parameters('addressVersion')]",
+                "idleTimeoutInMinutes": "[parameters('idleTimeoutInMinutes')]",
+                "dnsSettings": "[if(equals(parameters('domainNameLabel'), ''), json('null'), variables('dnsSettingsValue'))]"
+            }
+        }
+    ],
+    "outputs": {
+        "id": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('ipName'))]"
+        },
+        "name": {
+            "type": "string",
+            "value": "[parameters('ipName')]"
+        }
+    }
+}

@@ -38,7 +38,7 @@
             {
                 "name": "hub",
                 "logAnalytics": {
-                    "name": "demo-hub-spoke"
+                    "name": "hub-spoke"
                 },
                 "network": {
                     "firewallInternalIP": "10.0.1.132",
@@ -140,6 +140,30 @@
                     "output": {
                         "type": "string",
                         "value": "[concat(parameters('baseName'), '-vnet')]"
+                    }
+                },
+                "publicIps": {
+                    "parameters": [
+                        {
+                            "name": "baseName",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[concat(parameters('baseName'), '-ip')]"
+                    }
+                },
+                "firewalls": {
+                    "parameters": [
+                        {
+                            "name": "baseName",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[concat(parameters('baseName'), '-fwl')]"
                     }
                 }
             }
@@ -343,6 +367,48 @@
             "copy": {
                 "name": "vnet-loop",
                 "count": "[length(variables('data'))]"
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[concat('dpy-fwl-', variables('hub')[0].name)]",
+            "resourceGroup": "[naming.resourceGroups(variables('hub')[0].name)]",
+            "dependsOn": [
+                "vnet-loop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/fwl.json', parameters('storageSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "storageAccountName": {
+                        "value": "[parameters('storageAccountName')]"
+                    },
+                    "storageSASToken": {
+                        "value": "[parameters('storageSASToken')]"
+                    },
+                    "fwlName": {
+                        "value": "[naming.firewalls(variables('hub')[0].name)]"
+                    },
+                    "virtualNetworkName": {
+                        "value": "[naming.virtualNetworks(variables('hub')[0].name)]"
+                    },
+                    "applicationRuleCollections": {
+                        "value": []
+                    },
+                    "natRuleCollections": {
+                        "value": []
+                    },
+                    "networkRuleCollections": {
+                        "value": []
+                    },
+                    "workspaceId": {
+                        "value": "[reference(concat('dpy-hub-loa-', variables('hub')[0].logAnalytics.name)).outputs.id.value]"
+                    }
+                }
             }
         }
     ],
