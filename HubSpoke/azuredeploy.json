@@ -165,6 +165,22 @@
                         "type": "string",
                         "value": "[concat(parameters('baseName'), '-fwl')]"
                     }
+                },
+                "peering": {
+                    "parameters": [
+                        {
+                            "name": "sourceVirtualNetwork",
+                            "type": "string"
+                        },
+                        {
+                            "name": "destinationVirtualNetwork",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[concat(parameters('sourceVirtualNetwork'), '-', parameters('destinationVirtualNetwork'), '-peer')]"
+                    }
                 }
             }
         }
@@ -410,7 +426,128 @@
                     }
                 }
             }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[concat('dpy-peering-', variables('onpremise')[0].name, '-to-', variables('hub')[0].name)]",
+            "resourceGroup": "[naming.resourceGroups(variables('onpremise')[0].name)]",
+            "dependsOn": [
+                "vnet-loop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/peering.json', parameters('storageSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "virtualNetworkName": {
+                        "value": "[naming.virtualNetworks(variables('onpremise')[0].name)]"
+                    },
+                    "peeringName": {
+                        "value": "[naming.peering(variables('onpremise')[0].name, variables('hub')[0].name)]"
+                    },
+                    "peerResourceGroupVirtualNetwork": {
+                        "value": "[naming.resourceGroups(variables('hub')[0].name)]"
+                    },
+                    "peerVirtualNetworkName": {
+                        "value": "[naming.virtualNetworks(variables('hub')[0].name)]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[concat('dpy-peering-', variables('hub')[0].name, '-to-', variables('spokes')[0].name)]",
+            "resourceGroup": "[naming.resourceGroups(variables('hub')[0].name)]",
+            "dependsOn": [
+                "vnet-loop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/peering.json', parameters('storageSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "virtualNetworkName": {
+                        "value": "[naming.virtualNetworks(variables('hub')[0].name)]"
+                    },
+                    "peeringName": {
+                        "value": "[naming.peering(variables('hub')[0].name, variables('spokes')[0].name)]"
+                    },
+                    "peerResourceGroupVirtualNetwork": {
+                        "value": "[naming.resourceGroups(variables('spokes')[0].name)]"
+                    },
+                    "peerVirtualNetworkName": {
+                        "value": "[naming.virtualNetworks(variables('spokes')[0].name)]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[concat('dpy-peering-', variables('spokes')[0].name, '-to-', variables('hub')[0].name)]",
+            "resourceGroup": "[naming.resourceGroups(variables('spokes')[0].name)]",
+            "dependsOn": [
+                "vnet-loop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/peering.json', parameters('storageSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "virtualNetworkName": {
+                        "value": "[naming.virtualNetworks(variables('spokes')[0].name)]"
+                    },
+                    "peeringName": {
+                        "value": "[naming.peering(variables('spokes')[0].name, variables('hub')[0].name)]"
+                    },
+                    "peerResourceGroupVirtualNetwork": {
+                        "value": "[naming.resourceGroups(variables('hub')[0].name)]"
+                    },
+                    "peerVirtualNetworkName": {
+                        "value": "[naming.virtualNetworks(variables('hub')[0].name)]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[concat('dpy-peering-', variables('hub')[0].name, '-to-', variables('onpremise')[0].name)]",
+            "resourceGroup": "[naming.resourceGroups(variables('hub')[0].name)]",
+            "dependsOn": [
+                "vnet-loop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/peering.json', parameters('storageSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "virtualNetworkName": {
+                        "value": "[naming.virtualNetworks(variables('hub')[0].name)]"
+                    },
+                    "peeringName": {
+                        "value": "[naming.peering(variables('hub')[0].name, variables('onpremise')[0].name)]"
+                    },
+                    "peerResourceGroupVirtualNetwork": {
+                        "value": "[naming.resourceGroups(variables('onpremise')[0].name)]"
+                    },
+                    "peerVirtualNetworkName": {
+                        "value": "[naming.virtualNetworks(variables('onpremise')[0].name)]"
+                    }
+                }
+            }
         }
+        
     ],
     "outputs": {}
 }

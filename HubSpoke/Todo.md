@@ -13,7 +13,7 @@
 - [ ] Log Analytics solutions
 - [X] Route Tables
 - [X] Virtual Network
-- [ ] Virtual Network Peering
+- [X] Virtual Network Peering
 - [X] Public IP
 - [X] Azure Firewall
 - [ ] Azure Firewall Rules
