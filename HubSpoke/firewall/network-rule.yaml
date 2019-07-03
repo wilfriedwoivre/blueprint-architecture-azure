@@ -1,0 +1,16 @@
+-
+  name: VM-Standard
+  priority: 1000
+  action:
+    type: Allow
+  rules:
+    -
+      name: NTP
+      protocols:
+        - TCP
+      sourceAddresses:
+        - 172.16.0.0/24
+      destinationAddresses:
+        - 51.140.127.197/32
+      destinationPorts:
+        - 123

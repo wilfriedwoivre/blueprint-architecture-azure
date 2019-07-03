@@ -1,0 +1,251 @@
+-
+  name: VM-Standard
+  priority: 1000
+  action:
+    type: Allow
+  rules:
+    -
+      name: settings-win.data.microsoft.com
+      direction: Inbound
+      protocols:
+        - https:443
+      fqdnTags: []
+      targetFqdns:
+        - settings-win.data.microsoft.com
+      actions: []
+      sourceAddresses:
+        - 172.0.0.0/24
+    -
+      name: download.windowsupdate.com
+      direction: Inbound
+      protocols:
+        - https:443
+      fqdnTags: []
+      targetFqdns:
+        - download.windowsupdate.com
+      actions: []
+      sourceAddresses:
+        - 172.0.0.0/24
+    -
+      name: fe2.update.microsoft.com
+      direction: Inbound
+      protocols:
+        - https:443
+      fqdnTags: []
+      targetFqdns:
+        - fe2.update.microsoft.com
+      actions: []
+      sourceAddresses:
+        - 172.0.0.0/24
+    -
+      name: sls.update.microsoft.com
+      direction: Inbound
+      protocols:
+        - https:443
+      fqdnTags: []
+      targetFqdns:
+        - sls.update.microsoft.com
+      actions: []
+      sourceAddresses:
+        - 172.0.0.0/24
+    -
+      name: v10.vortex-win.data.microsoft.com
+      direction: Inbound
+      protocols:
+        - https:443
+      fqdnTags: []
+      targetFqdns:
+        - v10.vortex-win.data.microsoft.com
+      actions: []
+      sourceAddresses:
+        - 172.0.0.0/24
+    -
+      name: ctldl.windowsupdate.com
+      direction: Inbound
+      protocols:
+        - http:80
+        - https:443
+      fqdnTags: []
+      targetFqdns:
+        - ctldl.windowsupdate.com
+      actions: []
+      sourceAddresses:
+        - 172.0.0.0/24
+-
+  name: Digicert
+  priority: 1100
+  action:
+    type: Allow
+  rules: 
+    -
+      name: crl3.digicert.com
+      direction: Inbound
+      protocols:
+        - http:80
+      targetFqdns:
+        - crl3.digicert.com
+      actions: []
+      sourceAddresses:
+        - 172.16.0.0/24
+    -
+      name: ocsp.digicert.com
+      direction: Inbound
+      protocols:
+        - http:80
+      targetFqdns:
+        - ocsp.digicert.com
+      actions: []
+      sourceAddresses:
+        - 172.16.0.0/24
+# -
+#   name: VM-LogAnalytics
+#   priority: 2000
+#   action:
+#     type: Allow
+#   rules:
+#     -
+#       name: cfb41098-75fc-4a4c-895e-b926f0b56dbf.oms.opinsights.azure.com
+#       direction: Inbound
+#       protocols:
+#         - https:443
+#       fqdnTags: []
+#       targetFqdns:
+#         - cfb41098-75fc-4a4c-895e-b926f0b56dbf.oms.opinsights.azure.com
+#       actions: []
+#       sourceAddresses:
+#         - 10.0.2.0/24
+#     -
+#       name: cfb41098-75fc-4a4c-895e-b926f0b56dbf.ods.opinsights.azure.com
+#       direction: Inbound
+#       protocols:
+#         - https:443
+#       fqdnTags: []
+#       targetFqdns:
+#         - cfb41098-75fc-4a4c-895e-b926f0b56dbf.ods.opinsights.azure.com
+#       actions: []
+#       sourceAddresses:
+#         - 10.0.2.0/24
+#     -
+#       name: opinsightsweuomssa.blob.core.windows.net
+#       direction: Inbound
+#       protocols:
+#         - https:443
+#       fqdnTags: []
+#       targetFqdns:
+#         - opinsightsweuomssa.blob.core.windows.net
+#       actions: []
+#       sourceAddresses:
+#         - 10.0.2.0/24
+#     -
+#       name: scadvisorcontent.blob.core.windows.net
+#       direction: Inbound
+#       protocols:
+#         - https:443
+#       fqdnTags: []
+#       targetFqdns:
+#         - scadvisorcontent.blob.core.windows.net
+#       actions: []
+#       sourceAddresses:
+#         - 10.0.2.0/24
+#         - 10.0.3.0/24
+#         - 10.0.4.0/24
+#         - 10.0.5.0/24
+#     -
+#       name: 7b79e6d4-aef8-4ca7-a6f2-47a6a2be02b0.oms.opinsights.azure.com
+#       direction: Inbound
+#       protocols:
+#         - https:443
+#       fqdnTags: []
+#       targetFqdns:
+#         - 7b79e6d4-aef8-4ca7-a6f2-47a6a2be02b0.oms.opinsights.azure.com
+#       actions: []
+#       sourceAddresses:
+#         - 10.0.3.0/24
+#     -
+#       name: 7b79e6d4-aef8-4ca7-a6f2-47a6a2be02b0.ods.opinsights.azure.com
+#       direction: Inbound
+#       protocols:
+#         - https:443
+#       fqdnTags: []
+#       targetFqdns:
+#         - 7b79e6d4-aef8-4ca7-a6f2-47a6a2be02b0.ods.opinsights.azure.com
+#       actions: []
+#       sourceAddresses:
+#         - 10.0.3.0/24
+#     -
+#       name: neuoiomssa.blob.core.windows.net
+#       direction: Inbound
+#       protocols:
+#         - https:443
+#       fqdnTags: []
+#       targetFqdns:
+#         - neuoiomssa.blob.core.windows.net
+#       actions: []
+#       sourceAddresses:
+#         - 10.0.3.0/24
+#     -
+#       name: 58cfe4e6-77ac-4a1e-9976-94cd4e7f93a0.oms.opinsights.azure.com
+#       direction: Inbound
+#       protocols:
+#         - https:443
+#       fqdnTags: []
+#       targetFqdns:
+#         - 58cfe4e6-77ac-4a1e-9976-94cd4e7f93a0.oms.opinsights.azure.com
+#       actions: []
+#       sourceAddresses:
+#         - 10.0.4.0/24
+#     -
+#       name: 58cfe4e6-77ac-4a1e-9976-94cd4e7f93a0.ods.opinsights.azure.com
+#       direction: Inbound
+#       protocols:
+#         - https:443
+#       fqdnTags: []
+#       targetFqdns:
+#         - 58cfe4e6-77ac-4a1e-9976-94cd4e7f93a0.ods.opinsights.azure.com
+#       actions: []
+#       sourceAddresses:
+#         - 10.0.4.0/24
+#     -
+#       name: cusoiomssa.blob.core.windows.net
+#       direction: Inbound
+#       protocols:
+#         - https:443
+#       fqdnTags: []
+#       targetFqdns:
+#         - cusoiomssa.blob.core.windows.net
+#       actions: []
+#       sourceAddresses:
+#         - 10.0.4.0/24
+#     -
+#       name: 82508901-0b76-40ce-b4d4-62b0bf1a3fdc.oms.opinsights.azure.com
+#       direction: Inbound
+#       protocols:
+#         - https:443
+#       fqdnTags: []
+#       targetFqdns:
+#         - 82508901-0b76-40ce-b4d4-62b0bf1a3fdc.oms.opinsights.azure.com
+#       actions: []
+#       sourceAddresses:
+#         - 10.0.5.0/24
+#     -
+#       name: 82508901-0b76-40ce-b4d4-62b0bf1a3fdc.ods.opinsights.azure.com
+#       direction: Inbound
+#       protocols:
+#         - https:443
+#       fqdnTags: []
+#       targetFqdns:
+#         - 82508901-0b76-40ce-b4d4-62b0bf1a3fdc.ods.opinsights.azure.com
+#       actions: []
+#       sourceAddresses:
+#         - 10.0.5.0/24
+#     -
+#       name: eus2oiomssa.blob.core.windows.net
+#       direction: Inbound
+#       protocols:
+#         - https:443
+#       fqdnTags: []
+#       targetFqdns:
+#         - eus2oiomssa.blob.core.windows.net
+#       actions: []
+#       sourceAddresses:
+#         - 10.0.5.0/24

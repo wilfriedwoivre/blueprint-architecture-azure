@@ -19,7 +19,8 @@
                 "name": "onpremise",
                 "network": {
                     "addressPrefix": [
-                        "10.0.0.0/24"
+                        "10.0.0.0/24",
+                        "192.168.0.0/27"
                     ],
                     "subnets": [
                         {
@@ -29,6 +30,10 @@
                         {
                             "name": "jump",
                             "addressPrefix": "10.0.0.224/28"
+                        },
+                        {
+                            "name": "AzureBastionSubnet",
+                            "addressPrefix": "192.168.0.0/27" 
                         }
                     ]
                 }
@@ -43,7 +48,8 @@
                 "network": {
                     "firewallInternalIP": "10.0.1.132",
                     "addressPrefix": [
-                        "10.0.1.0/24"
+                        "10.0.1.0/24",
+                        "192.168.1.0/27"
                     ],
                     "subnets": [
                         {
@@ -53,6 +59,10 @@
                         {
                             "name": "AzureFirewallSubnet",
                             "addressPrefix": "10.0.1.128/25"
+                        },
+                        {
+                            "name": "AzureBastionSubnet",
+                            "addressPrefix": "192.168.1.0/27" 
                         }
                     ]
                 }
@@ -64,7 +74,8 @@
                 "network": {
                     "addressPrefix": [
                         "10.0.2.0/24",
-                        "172.0.0.0/24"
+                        "172.16.0.0/24",
+                        "192.168.2.0/27"
                     ],
                     "subnets": [
                         {
@@ -73,7 +84,11 @@
                         },
                         {
                             "name": "compute",
-                            "addressPrefix": "172.0.0.0/24"
+                            "addressPrefix": "172.16.0.0/24"
+                        },
+                        {
+                            "name": "AzureBastionSubnet",
+                            "addressPrefix": "192.168.2.0/27" 
                         }
                     ]
                 }
@@ -81,6 +96,7 @@
         ],
         "data": "[union(variables('onpremise'), variables('hub'), variables('spokes'))]",
         "subnetsWithoutRouteTable": [
+            "AzureBastionSubnet",
             "AzureFirewallSubnet",
             "local",
             "jump"
@@ -164,6 +180,18 @@
                     "output": {
                         "type": "string",
                         "value": "[concat(parameters('baseName'), '-fwl')]"
+                    }
+                },
+                "bastionHosts": {
+                    "parameters": [
+                        {
+                            "name": "baseName",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[concat(parameters('baseName'), '-bsh')]"
                     }
                 },
                 "peering": {
@@ -412,17 +440,98 @@
                     "virtualNetworkName": {
                         "value": "[naming.virtualNetworks(variables('hub')[0].name)]"
                     },
-                    "applicationRuleCollections": {
-                        "value": []
-                    },
-                    "natRuleCollections": {
-                        "value": []
-                    },
-                    "networkRuleCollections": {
-                        "value": []
-                    },
                     "workspaceId": {
                         "value": "[reference(concat('dpy-hub-loa-', variables('hub')[0].logAnalytics.name)).outputs.id.value]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[concat('dpy-bsh-', variables('onpremise')[0].name)]",
+            "resourceGroup": "[naming.resourceGroups(variables('onpremise')[0].name)]",
+            "dependsOn": [
+                "vnet-loop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/bsh.json', parameters('storageSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "storageAccountName": {
+                        "value": "[parameters('storageAccountName')]"
+                    },
+                    "storageSASToken": {
+                        "value": "[parameters('storageSASToken')]"
+                    },
+                    "bshName": {
+                        "value": "[naming.bastionHosts(variables('onpremise')[0].name)]"
+                    },
+                    "virtualNetworkName": {
+                        "value": "[naming.virtualNetworks(variables('onpremise')[0].name)]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[concat('dpy-bsh-', variables('hub')[0].name)]",
+            "resourceGroup": "[naming.resourceGroups(variables('hub')[0].name)]",
+            "dependsOn": [
+                "vnet-loop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/bsh.json', parameters('storageSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "storageAccountName": {
+                        "value": "[parameters('storageAccountName')]"
+                    },
+                    "storageSASToken": {
+                        "value": "[parameters('storageSASToken')]"
+                    },
+                    "bshName": {
+                        "value": "[naming.bastionHosts(variables('hub')[0].name)]"
+                    },
+                    "virtualNetworkName": {
+                        "value": "[naming.virtualNetworks(variables('hub')[0].name)]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[concat('dpy-bsh-', variables('spokes')[0].name)]",
+            "resourceGroup": "[naming.resourceGroups(variables('spokes')[0].name)]",
+            "dependsOn": [
+                "vnet-loop"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/bsh.json', parameters('storageSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "storageAccountName": {
+                        "value": "[parameters('storageAccountName')]"
+                    },
+                    "storageSASToken": {
+                        "value": "[parameters('storageSASToken')]"
+                    },
+                    "bshName": {
+                        "value": "[naming.bastionHosts(variables('spokes')[0].name)]"
+                    },
+                    "virtualNetworkName": {
+                        "value": "[naming.virtualNetworks(variables('spokes')[0].name)]"
                     }
                 }
             }

@@ -1,0 +1,128 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"storageAccountName": {
+			"type": "string",
+			"metadata": {
+				"description": "Storage Name for nested template "
+			}
+		},
+		"storageSASToken": {
+			"type": "string",
+			"metadata": {
+				"description": "Storage SAS Token"
+			}
+		},
+		"bshName": {
+			"type": "string",
+			"metadata": {
+				"description": "Bastion Host Name"
+			}
+		},
+		"virtualNetworkResourceGroupName": {
+			"type": "string",
+			"metadata": {
+				"description": "Virtual Network Resource Group Name"
+			},
+			"defaultValue": "[resourceGroup().name]"
+		},
+		"virtualNetworkName": {
+			"type": "string",
+			"metadata": {
+				"description": "Virtual Network Name"
+			}
+		},
+		"subnetName": {
+			"type": "string",
+			"metadata": {
+				"description": "subnet name"
+			},
+			"defaultValue": "AzureBastionSubnet"
+		}
+	},
+	"functions": [
+        {
+            "namespace": "naming",
+            "members": {
+                "publicIps": {
+                    "parameters": [
+                        {
+                            "name": "baseName",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[concat(parameters('baseName'), '-ip')]"
+                    }
+                }
+            }
+        }
+    ],
+	"variables": {
+		"subnetReferenceId": "[resourceId(parameters('virtualNetworkResourceGroupName'),'Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('subnetName'))]"
+	},
+	"resources": [
+		{
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2018-05-01",
+			"name": "dpy-bsh-publicIp",
+			"properties": {
+				"mode": "Incremental",
+				"templateLink": {
+					"uri": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/arm/templates/pip.json', parameters('storageSASToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"ipName": {
+						"value": "[naming.publicIps(parameters('bshName'))]"
+					},
+					"sku": {
+						"value": "Standard"
+					},
+					"allocationMethod": {
+						"value": "Static"
+					},
+					"addressVersion": {
+						"value": "IPv4"
+					}
+				}
+			}
+		},
+		{
+			"name": "[parameters('bshName')]",
+			"type": "Microsoft.Network/bastionHosts",
+			"apiVersion": "2019-04-01",
+			"location": "[resourceGroup().location]",
+			"dependsOn": [
+				"dpy-bsh-publicIp"
+			],
+			"properties": {
+				"ipConfigurations": [
+					{
+						"name": "[concat('ipconf-', reference('dpy-bsh-publicIp').outputs.name.value)]",
+						"properties": {
+							"subnet": {
+								"id": "[variables('subnetReferenceId')]"
+							},
+							"publicIPAddress": {
+								"id": "[reference('dpy-bsh-publicIp').outputs.id.value]"
+							}
+						}
+					}
+				]
+			}
+		}
+	],
+	"outputs": {
+		"id": {
+			"type": "string",
+			"value": "[resourceId('Microsoft.Network/bastionHosts', parameters('bshName'))]"
+		},
+		"name": {
+			"type": "string",
+			"value": "[parameters('bshName')]"
+		}
+	}
+}

@@ -4,12 +4,10 @@ Param(
     $storageName,
     [Parameter(Mandatory=$true)]
     [string]
-    $containerName,
-    [Parameter(Mandatory=$true)]
-    [string]
     $resourceGroupName
 )
 
+$containerName = "arm"
 $keys = Get-AzStorageAccountKey -ResourceGroupName $resourceGroupName -Name $storageName
 
 $context = New-AzStorageContext -StorageAccountName $storageName -StorageAccountKey $keys.Value[0]

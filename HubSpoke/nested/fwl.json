@@ -40,27 +40,6 @@
             },
             "defaultValue": "AzureFirewallSubnet"
         },
-        "applicationRuleCollections": {
-            "type": "array",
-            "metadata": {
-                "description": "Application Rule Collection. JSON ARM format https://docs.microsoft.com/en-us/azure/templates/microsoft.network/2018-08-01/azurefirewalls#AzureFirewallApplicationRuleCollection"
-            },
-            "defaultValue": []
-        },
-        "natRuleCollections": {
-            "type": "array",
-            "metadata": {
-                "description": "NAT Rule Collection. JSON ARM format https://docs.microsoft.com/en-us/azure/templates/microsoft.network/2018-08-01/azurefirewalls#AzureFirewallNatRuleCollection"
-            },
-            "defaultValue": []
-        },
-        "networkRuleCollections": {
-            "type": "array",
-            "metadata": {
-                "description": "Network Rule Collection. JSON ARM format https://docs.microsoft.com/en-us/azure/templates/microsoft.network/2018-08-01/azurefirewalls#AzureFirewallNetworkRuleCollection"
-            },
-            "defaultValue": []
-        },
         "workspaceId": {
             "type": "string",
             "metadata": {
@@ -150,10 +129,7 @@
                             }
                         }
                     }
-                ],
-                "applicationRuleCollections": "[parameters('applicationRuleCollections')]",
-                "natRuleCollections": "[parameters('natRuleCollections')]",
-                "networkRuleCollections": "[parameters('networkRuleCollections')]"
+                ]
             },
             "resources": [
                 {

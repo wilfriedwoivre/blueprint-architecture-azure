@@ -20,7 +20,7 @@
             "command": "",
             "args": [
                 {
-                    "value": ".\\HubSpoke\\build.ps1 -storageName ${config:storageAccount.name} -containerName ${config:storageAccount.containerName} -resourceGroupName ${config:storageAccount.resourceGroupName}",
+                    "value": ".\\HubSpoke\\build.ps1 -storageName ${config:storageAccount.name} -resourceGroupName ${config:storageAccount.resourceGroupName}",
                     "quoting": "weak"
                 }
             ],
