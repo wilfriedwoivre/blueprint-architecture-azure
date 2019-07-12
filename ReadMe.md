@@ -11,4 +11,4 @@ Location **/.vscode/settings.json**
 }
 ```
 
-Hub & Spoke : [Todo.md](./HubSpoke/Todo.md)
+- Hub & Spoke : [Readme.md](./HubSpoke/docs/Readme.md)

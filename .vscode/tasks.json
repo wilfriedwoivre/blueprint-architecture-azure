@@ -74,6 +74,29 @@
                 }
             ],
             "problemMatcher": []
+        },
+        {
+            "label": "[HubSpoke] Apply Firewall rules",
+            "type": "shell",
+            "options": {
+                "shell": {
+                    "executable": "powershell.exe",
+                    "args": [
+                        "-NoProfile",
+                        "-ExecutionPolicy",
+                        "ByPass",
+                        "-Command"
+                    ]
+                }
+            },
+            "command": "",
+            "args": [
+                {
+                    "value": ".\\HubSpoke\\firewall\setup-firewall-rules.ps1",
+                    "quoting": "weak"
+                }
+            ],
+            "problemMatcher": []
         }
     ]
 }

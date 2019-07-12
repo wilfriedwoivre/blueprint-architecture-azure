@@ -5,8 +5,9 @@
 - [X] Task to push nested template to Azure Storage
 - [X] Task to launch deployment
 - [X] Task to launch remove deployment (based on tags)
+- [X] Task to upadte firewall rules
 
-## Services
+## Azure Services
 
 - [X] Resource group
 - [X] Log Analytics workspace
@@ -17,9 +18,8 @@
 - [X] Public IP
 - [X] Azure Firewall
 - [X] Azure Firewall Rules
-- [ ] Azure Bastion
+- [X] Azure Bastion
 - [ ] Storage Account
 - [ ] KeyVault
 - [ ] Network Security Group
 - [ ] Virtual Machine
-
